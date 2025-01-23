@@ -1,12 +1,14 @@
 import { BadRequestError } from '../types/errors';
 import * as authService from '../services/auth.service';
+import { authSchema } from '../validators/auth.validator';
 
 export const register = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      throw new BadRequestError('Missing required fields');
+    const { error } = authSchema.validate({ email, password });
+    if (error) {
+      throw new BadRequestError(error.message);
     }
 
     const data = await authService.register(email, password);
@@ -19,12 +21,15 @@ export const register = async (req, res, next) => {
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      throw new BadRequestError('Missing email or password');
+
+    const { error } = authSchema.validate({ email, password });
+   
+    if (error) {
+      throw new BadRequestError(error.message);
     }
 
-    const token = await authService.login(email, password);
-    res.status(200).json({ token });
+    const { authToken, refreshToken } = await authService.login(email, password);
+    res.status(200).json({ authToken, refreshToken });
   } catch (error) {
     next(error);
   }
@@ -45,3 +50,36 @@ export const verifyEmail = async (req, res, next) => {
     next(error);
   }
 }
+
+export const refreshToken = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      throw new BadRequestError('Refresh token is required');
+    }
+
+    const data = await authService.refreshToken(refreshToken);
+
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export const logout = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      throw new BadRequestError('Refresh Token is required');
+    }
+
+    await authService.logout(refreshToken as string);
+
+    res.status(200).json({ message: 'Logged out successfully!' });
+  } catch (error) {
+    next(error);
+  }
+}
+

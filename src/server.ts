@@ -1,6 +1,6 @@
 import express from 'express'
 import dotenv from 'dotenv'
-import authRoutes from './routes/auth'
+import authRoutes from './routes/auth.routes'
 import protectedRoute from './routes/protectedRoute'
 import connect from './db/connect'
 import errorHandlerMiddleware from './middlewares/errorHandler'

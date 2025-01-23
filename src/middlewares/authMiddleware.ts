@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import getSecret from '../config/awsSecret';
+import { getAuthSecret } from '../config/awsSecret';
 import User from '../models/User';
 
 const verifyToken = async (req, res, next) => {
@@ -9,13 +9,15 @@ const verifyToken = async (req, res, next) => {
     return res.status(401).json({ message: 'Access denied. No token provided.' });
   }
 
+
   const token = authHeader.split(' ')[1];
 
   try {
-    const secret = await getSecret();
-    const decoded = jwt.verify(token, secret) as { userId: string };
+    const secret = await getAuthSecret();
+    const decoded = jwt.verify(token, secret) as { uuid: string };
 
-    const user = await User.findById(decoded.userId);
+
+    const user = await User.findOne({ uuid: decoded.uuid });
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
     }
@@ -24,7 +26,7 @@ const verifyToken = async (req, res, next) => {
       return res.status(401).json({ message: 'Please verify your email before proceeding' });
     }
 
-    req.userId = decoded.userId;
+    req.uuid = user.uuid;
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Invalid token' });
